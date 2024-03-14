@@ -41,6 +41,10 @@ def ade_classes():
         'clock', 'flag'
     ]
 
+def crack_classes():
+    return [
+        'background', 'crack'
+    ]
 
 def voc_classes():
     """Pascal VOC class names for external use."""
@@ -311,6 +315,9 @@ def ade_palette():
             [184, 255, 0], [0, 133, 255], [255, 214, 0], [25, 194, 194],
             [102, 255, 0], [92, 0, 255]]
 
+def crack_palette():
+    return [[128, 0, 0], [0, 128, 0]
+    ]
 
 def voc_palette():
     """Pascal VOC palette for external use."""
@@ -491,7 +498,8 @@ dataset_aliases = {
     'lip': ['LIP', 'lip'],
     'mapillary_v1': ['mapillary_v1'],
     'mapillary_v2': ['mapillary_v2'],
-    'bdd100k': ['bdd100k']
+    'bdd100k': ['bdd100k'],
+    'crack': ['crack']
 }
 
 

@@ -1,7 +1,11 @@
 _base_ = [
-    '../_base_/models/fpn_poolformer_s12.py', '../_base_/default_runtime.py',
-    '../_base_/schedules/schedule_40k.py'
+    '../_base_/models/fpn_poolformer_s12.py',
+    '../_base_/schedules/schedule_160k.py',
+    '../_base_/default_runtime.py',
 ]
+
+# crop_size = (512, 512)
+# data_preprocessor = dict(size=crop_size)
 
 # dataset settings
 dataset_type = 'ADE20KDataset'
@@ -34,7 +38,7 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=8,
+    batch_size=4,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='InfiniteSampler', shuffle=True),
@@ -67,25 +71,16 @@ test_evaluator = val_evaluator
 # model settings
 model = dict(
     data_preprocessor=data_preprocessor,
-    neck=dict(in_channels=[64, 128, 320, 512]),
+    backbone=dict(
+        type='efficientformerv2_s1_feat',
+        style='pytorch',
+        init_cfg=dict(
+            type='Pretrained',
+            checkpoint='/home/nypyp/code/mmsegmentation/weights/eformer_s1_450.pth'
+        ),
+    ),
+    neck=dict(in_channels=[32, 48, 120, 224]),
     decode_head=dict(num_classes=150))
 
-# optimizer
-# optimizer = dict(_delete_=True, type='AdamW', lr=0.0002, weight_decay=0.0001)
-# optimizer_config = dict()
-# # learning policy
-# lr_config = dict(policy='poly', power=0.9, min_lr=0.0, by_epoch=False)
-optim_wrapper = dict(
-    _delete_=True,
-    type='AmpOptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001))
-param_scheduler = [
-    dict(
-        type='PolyLR',
-        power=0.9,
-        begin=0,
-        end=40000,
-        eta_min=0.0,
-        by_epoch=False,
-    )
-]
+#optimizer
+optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001)

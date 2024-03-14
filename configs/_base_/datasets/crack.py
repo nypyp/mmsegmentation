@@ -1,6 +1,6 @@
 # dataset settings
-dataset_type = 'ADE20KDataset'
-data_root = 'data/ade/ADEChallengeData2016'
+dataset_type = 'Crack'
+data_root = 'data/example/'
 crop_size = (512, 512)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -10,7 +10,7 @@ train_pipeline = [
         scale=(2048, 512),
         ratio_range=(0.5, 2.0),
         keep_ratio=True),
-    dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
+        dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PhotoMetricDistortion'),
     dict(type='PackSegInputs')
