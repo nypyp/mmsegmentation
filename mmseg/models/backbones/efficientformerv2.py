@@ -12,8 +12,7 @@ from timm.models.layers import DropPath, trunc_normal_
 from timm.models.registry import register_model
 from timm.models.layers.helpers import to_2tuple
 from mmseg.registry import MODELS
-from mmengine.model import BaseModule, PretrainedInit
-from mmengine.runner import load_checkpoint, load_state_dict
+from mmengine.runner import load_state_dict
 
 # try:
 #     from mmseg.models.builder import BACKBONES as seg_BACKBONES
@@ -73,7 +72,7 @@ expansion_ratios_S0 = {
 }
 
 
-class Attention4D(BaseModule):
+class Attention4D(torch.nn.Module):
     def __init__(self, dim=384, key_dim=32, num_heads=8,
                  attn_ratio=4,
                  resolution=7,
@@ -189,7 +188,7 @@ def stem(in_chs, out_chs, act_layer=nn.ReLU):
     )
 
 
-class LGQuery(BaseModule):
+class LGQuery(torch.nn.Module):
     def __init__(self, in_dim, out_dim, resolution1, resolution2):
         super().__init__()
         self.resolution1 = resolution1
@@ -209,7 +208,7 @@ class LGQuery(BaseModule):
         return q
 
 
-class Attention4DDownsample(BaseModule):
+class Attention4DDownsample(torch.nn.Module):
     def __init__(self, dim=384, key_dim=16, num_heads=8,
                  attn_ratio=4,
                  resolution=7,
@@ -311,7 +310,7 @@ class Attention4DDownsample(BaseModule):
         return out
 
 
-class Embedding(BaseModule):
+class Embedding(torch.nn.Module):
     def __init__(self, patch_size=3, stride=2, padding=1,
                  in_chans=3, embed_dim=768, norm_layer=nn.BatchNorm2d,
                  light=False, asub=False, resolution=None, act_layer=nn.ReLU, attn_block=Attention4DDownsample):
@@ -364,7 +363,7 @@ class Embedding(BaseModule):
         return out
 
 
-class Mlp(BaseModule):
+class Mlp(torch.nn.Module):
     """
     Implementation of MLP with 1*1 convolutions.
     Input: tensor with shape [B, C, H, W]
@@ -416,7 +415,7 @@ class Mlp(BaseModule):
         return x
 
 
-class AttnFFN(BaseModule):
+class AttnFFN(torch.nn.Module):
 
     def __init__(self, dim, mlp_ratio=4.,
                  act_layer=nn.ReLU, norm_layer=nn.LayerNorm,
@@ -451,7 +450,7 @@ class AttnFFN(BaseModule):
         return x
 
 
-class FFN(BaseModule):
+class FFN(torch.nn.Module):
     def __init__(self, dim, pool_size=3, mlp_ratio=4.,
                  act_layer=nn.GELU,
                  drop=0., drop_path=0.,
@@ -515,7 +514,7 @@ def meta_blocks(dim, index, layers,
     return blocks
 
 
-class EfficientFormer(BaseModule):
+class EfficientFormer(torch.nn.Module):
 
     def __init__(self, layers, embed_dims=None,
                  mlp_ratios=4, downsamples=None,
@@ -617,7 +616,6 @@ class EfficientFormer(BaseModule):
             #             f'training start from scratch')
             pass
         else:
-            pass
             #super().init_weights()
             assert 'checkpoint' in self.init_cfg, f'Only support ' \
                                                   f'specify `Pretrained` in ' \
@@ -692,6 +690,19 @@ class EfficientFormer(BaseModule):
 
 
 @MODELS.register_module()
+class efficientformerv2_s0_feat(EfficientFormer):
+    def __init__(self, **kwargs):
+        super().__init__(
+            layers=EfficientFormer_depth['S0'],
+            embed_dims=EfficientFormer_width['S0'],
+            downsamples=[True, True, True, True],
+            fork_feat=True,
+            drop_path_rate=0.,
+            vit_num=2,
+            e_ratios=expansion_ratios_S0,
+            **kwargs)
+
+@MODELS.register_module()
 class efficientformerv2_s1_feat(EfficientFormer):
     def __init__(self, **kwargs):
         super().__init__(
@@ -699,10 +710,37 @@ class efficientformerv2_s1_feat(EfficientFormer):
             embed_dims=EfficientFormer_width['S1'],
             downsamples=[True, True, True, True],
             fork_feat=True,
-            # drop_path_rate=0.,
+            drop_path_rate=0.,
             vit_num=2,
             e_ratios=expansion_ratios_S1,
             **kwargs)
+
+@MODELS.register_module()
+class efficientformerv2_s2_feat(EfficientFormer):
+    def __init__(self, **kwargs):
+        super().__init__(
+            layers=EfficientFormer_depth['S2'],
+            embed_dims=EfficientFormer_width['S2'],
+            downsamples=[True, True, True, True],
+            fork_feat=True,
+            #drop_path_rate=0.02,
+            vit_num=4,
+            e_ratios=expansion_ratios_S2,
+            **kwargs)
+
+@MODELS.register_module()
+class efficientformerv2_l_feat(EfficientFormer):
+    def __init__(self, **kwargs):
+        super().__init__(
+            layers=EfficientFormer_depth['L'],
+            embed_dims=EfficientFormer_width['L'],
+            downsamples=[True, True, True, True],
+            fork_feat=True,
+            drop_path_rate=0.1,
+            vit_num=6,
+            e_ratios=expansion_ratios_L,
+            **kwargs)
+        
 
 # if has_mmseg:
 #     @MODELS.register_module()

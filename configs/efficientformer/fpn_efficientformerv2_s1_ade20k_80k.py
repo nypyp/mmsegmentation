@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/fpn_poolformer_s12.py',
-    '../_base_/schedules/schedule_160k.py',
+    '../_base_/schedules/schedule_80k.py',
     '../_base_/default_runtime.py',
 ]
 
@@ -38,7 +38,7 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=4,
+    batch_size=16,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='InfiniteSampler', shuffle=True),
@@ -68,6 +68,7 @@ test_dataloader = val_dataloader
 val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'])
 test_evaluator = val_evaluator
 
+ham_norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
 # model settings
 model = dict(
     data_preprocessor=data_preprocessor,
@@ -78,9 +79,29 @@ model = dict(
             type='Pretrained',
             checkpoint='/home/nypyp/code/mmsegmentation/weights/eformer_s1_450.pth'
         ),
+        drop_path_rate =0.,
     ),
-    neck=dict(in_channels=[32, 48, 120, 224]),
-    decode_head=dict(num_classes=150))
+    decode_head=dict(
+        type='LightHamHead',
+        in_channels=[48, 120, 224],
+        in_index=[1, 2, 3],
+        channels=256,
+        ham_channels=256,
+        dropout_ratio=0.1,
+        num_classes=150,
+        norm_cfg=ham_norm_cfg,
+        align_corners=False,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
+        ham_kwargs=dict(
+            MD_S=1,
+            MD_R=16,
+            train_steps=6,
+            eval_steps=7,
+            inv_t=100,
+            rand_init=True)))
+    # neck=dict(in_channels=[32, 48, 120, 224]),
+    # decode_head=dict(num_classes=150))
 
 #optimizer
 optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001)

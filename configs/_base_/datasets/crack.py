@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'Crack'
-data_root = 'data/example/'
+data_root = 'data/crack/'
 crop_size = (512, 512)
 train_pipeline = [
     dict(type='LoadImageFromFile'),

@@ -3,14 +3,16 @@ from .basesegdataset import BaseSegDataset
 
 @DATASETS.register_module()
 class Crack(BaseSegDataset):
+    """_summary_
+    0 stands for background, not include in categories
+    """
     METAINFO = dict(
-        classes = ('background','crack'),
-        palette = ([128,0,0],[0,128,0])
+        classes = ('background','crack')
     )
 
     def __init__(self,
                  img_suffix='.jpg',
-                 seg_map_suffix='.jpg',
+                 seg_map_suffix='.png',
                  reduce_zero_label=True,
                  **kwargs) -> None:
         super().__init__(

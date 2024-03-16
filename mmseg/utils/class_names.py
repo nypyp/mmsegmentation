@@ -43,7 +43,7 @@ def ade_classes():
 
 def crack_classes():
     return [
-        'background', 'crack'
+        'backgournd','crack'
     ]
 
 def voc_classes():
@@ -316,7 +316,7 @@ def ade_palette():
             [102, 255, 0], [92, 0, 255]]
 
 def crack_palette():
-    return [[128, 0, 0], [0, 128, 0]
+    return [[128,0,0],[0, 128, 0]
     ]
 
 def voc_palette():

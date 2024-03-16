@@ -27,6 +27,8 @@ MANIFEST
 ADEChallengeData2016/
 ADEChallengeData2016.zip
 work_dir/
+work-dir/
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -8,7 +8,7 @@ vis_backends = [dict(type='LocalVisBackend'),
                 dict(type='TensorboardVisBackend')]
 visualizer = dict(
     type='SegLocalVisualizer', vis_backends=vis_backends, name='visualizer')
-log_processor = dict(by_epoch=False)
+log_processor = dict(by_epoch=True)
 log_level = 'INFO'
 load_from = None
 resume = False
