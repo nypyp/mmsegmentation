@@ -13,6 +13,7 @@ from mmseg.utils import ConfigType, SampleList
 from ..builder import build_loss
 from ..losses import accuracy
 from ..utils import resize
+from ...models.backbones.crackformerv2 import crackformer
 
 
 class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
@@ -259,6 +260,7 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
             dict[str, Tensor]: a dictionary of loss components
         """
         seg_logits = self.forward(inputs)
+        # torch.save(inputs, '/home/nypyp/code/mmsegmentation/weights/tensor_logcacu.pt')
         losses = self.loss_by_feat(seg_logits, batch_data_samples)
         return losses
 

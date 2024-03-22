@@ -591,11 +591,11 @@ class EfficientFormer(torch.nn.Module):
 
         self.apply(self.cls_init_weights)
 
-        self.init_cfg = copy.deepcopy(init_cfg)
+        # self.init_cfg = copy.deepcopy(init_cfg)
         # load pre-trained model
         if self.fork_feat and (
                 self.init_cfg is not None or pretrained is not None):
-            self.init_weights()
+            # self.init_weights()
             self = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self)
             self.train()
 

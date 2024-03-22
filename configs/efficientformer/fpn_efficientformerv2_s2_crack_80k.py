@@ -1,13 +1,11 @@
 _base_ = [
     '../_base_/models/fpn_poolformer_s12.py',
-    '../_base_/schedules/schedule_80k.py',
+    '../_base_/schedules/schedule_160k.py',
     '../_base_/default_runtime.py',
     '../_base_/datasets/crack.py'
 
 ]
 
-# crop_size = (512, 512)
-# data_preprocessor = dict(size=crop_size)
 data_preprocessor = dict(
     type='SegDataPreProcessor',
     mean=[123.675, 116.28, 103.53],
@@ -36,3 +34,13 @@ model = dict(
 train_dataloader = dict(batch_size=8)
 #optimizer
 optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001)
+param_scheduler = [
+    dict(
+        type='PolyLR',
+        power=0.9,
+        begin=0,
+        end=160000,
+        eta_min=0.0,
+        by_epoch=False,
+    )
+]

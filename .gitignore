@@ -28,6 +28,7 @@ ADEChallengeData2016/
 ADEChallengeData2016.zip
 work_dir/
 work-dir/
+weights/
 
 
 # PyInstaller

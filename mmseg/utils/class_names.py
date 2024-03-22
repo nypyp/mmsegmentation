@@ -480,6 +480,21 @@ def bdd100k_palette():
             [0, 0, 230], [119, 11, 32]]
 
 
+def hsidrive_classes():
+    """HSI Drive 2.0 class names for external use."""
+    return [
+        'unlabelled', 'road', 'road marks', 'vegetation', 'painted metal',
+        'sky', 'concrete', 'pedestrian', 'water', 'unpainted metal', 'glass'
+    ]
+
+
+def hsidrive_palette():
+    """HSI Drive 2.0 palette for external use."""
+    return [[0, 0, 0], [77, 77, 77], [255, 255, 255], [0, 255, 0], [255, 0, 0],
+            [0, 0, 255], [102, 51, 0], [255, 255, 0], [0, 207, 250],
+            [255, 166, 0], [0, 204, 204]]
+
+
 dataset_aliases = {
     'cityscapes': ['cityscapes'],
     'ade': ['ade', 'ade20k'],

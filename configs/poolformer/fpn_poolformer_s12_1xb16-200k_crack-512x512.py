@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/fpn_poolformer_s12.py', '../_base_/default_runtime.py',
-    '../_base_/schedules/schedule_160k.py',
+    '../_base_/schedules/schedule_200k.py',
     '../_base_/datasets/crack.py'
 ]
 
@@ -18,9 +18,17 @@ data_preprocessor = dict(
 model = dict(
     data_preprocessor=data_preprocessor,
     neck=dict(in_channels=[64, 128, 320, 512]),
-    decode_head=dict(num_classes=150))
+    decode_head=dict(
+        num_classes=2,
+        out_channels=1,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0
+        )))
 
-train_dataloader = dict(batch_size=4)
+train_dataloader = dict(batch_size=16)
+train_cfg = dict(val_interval=20000)
+test_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
+val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 # optimizer
 # optimizer = dict(_delete_=True, type='AdamW', lr=0.0002, weight_decay=0.0001)
 # optimizer_config = dict()
@@ -35,7 +43,7 @@ param_scheduler = [
         type='PolyLR',
         power=0.9,
         begin=0,
-        end=160000,
+        end=200000,
         eta_min=0.0,
         by_epoch=False,
     )
