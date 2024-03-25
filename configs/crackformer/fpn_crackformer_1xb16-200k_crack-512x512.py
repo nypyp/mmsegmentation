@@ -4,6 +4,7 @@ _base_ = [
     '../_base_/datasets/crack.py'
 ]
 
+crop_size = (512,512)
 data_preprocessor = dict(
     type='SegDataPreProcessor',
     mean=[123.675, 116.28, 103.53],
@@ -20,11 +21,6 @@ model = dict(
     data_preprocessor=data_preprocessor,
     backbone=dict(
         type='crackformer',
-        # init_cfg=dict(
-        #     type='Pretrained',
-        #     checkpoint='/xxx',
-        #     prefix='backbone.',
-        # ),
     ),
     decode_head=dict(
         type='FakeHead',
@@ -39,8 +35,8 @@ model = dict(
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
 
-train_dataloader = dict(batch_size=4)
-train_cfg = dict(val_interval=20000)
+train_dataloader = dict(batch_size=1)
+train_cfg = dict(val_interval=25000)
 test_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 # optimizer
@@ -48,17 +44,13 @@ val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 # optimizer_config = dict()
 # # learning policy
 # lr_config = dict(policy='poly', power=0.9, min_lr=0.0, by_epoch=False)
-optim_wrapper = dict(
-    _delete_=True,
-    type='AmpOptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001))
+optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0005)
 param_scheduler = [
     dict(
-        type='PolyLR',
-        power=0.9,
+        type='MultiStepLR',
         begin=0,
         end=200000,
-        eta_min=0.0,
         by_epoch=False,
+        milestones=[8000, 25000, 50000],
     )
 ]
