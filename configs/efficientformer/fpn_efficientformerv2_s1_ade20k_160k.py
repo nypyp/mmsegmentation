@@ -19,16 +19,16 @@ model = dict(
     type='EncoderDecoder',
     data_preprocessor = data_preprocessor,
     backbone=dict(
-        type='efficientformerv2_s2_feat',
+        type='efficientformerv2_s1_feat',
         style='pytorch',
         init_cfg=dict(
             type='Pretrained',
-            checkpoint='/home/nypyp/code/mmsegmentation/weights/eformer_s2_450.pth',
+            checkpoint='/home/nypyp/code/mmsegmentation/weights/eformer_s1_450.pth',
         ),
     ),
     neck=dict(
         type='FPN',
-        in_channels=[32, 64, 144, 288],
+        in_channels=[32, 48, 120, 224],
         out_channels=256,
         num_outs=4),
     decode_head=dict(
@@ -48,7 +48,7 @@ model = dict(
     test_cfg=dict(mode='whole'))
 
 train_dataloader = dict(batch_size=8)
-train_cfg = dict(val_interval=16000)
+train_cfg = dict(val_interval=10000)
 test_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 # optimizer

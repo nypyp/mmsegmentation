@@ -310,7 +310,7 @@ class Attention4DDownsample(torch.nn.Module):
         return out
 
 
-class Embedding(torch.nn.Module):
+class Embedding(nn.Module):
     def __init__(self, patch_size=3, stride=2, padding=1,
                  in_chans=3, embed_dim=768, norm_layer=nn.BatchNorm2d,
                  light=False, asub=False, resolution=None, act_layer=nn.ReLU, attn_block=Attention4DDownsample):
@@ -363,7 +363,7 @@ class Embedding(torch.nn.Module):
         return out
 
 
-class Mlp(torch.nn.Module):
+class Mlp(nn.Module):
     """
     Implementation of MLP with 1*1 convolutions.
     Input: tensor with shape [B, C, H, W]
@@ -415,7 +415,7 @@ class Mlp(torch.nn.Module):
         return x
 
 
-class AttnFFN(torch.nn.Module):
+class AttnFFN(nn.Module):
 
     def __init__(self, dim, mlp_ratio=4.,
                  act_layer=nn.ReLU, norm_layer=nn.LayerNorm,
@@ -450,7 +450,7 @@ class AttnFFN(torch.nn.Module):
         return x
 
 
-class FFN(torch.nn.Module):
+class FFN(nn.Module):
     def __init__(self, dim, pool_size=3, mlp_ratio=4.,
                  act_layer=nn.GELU,
                  drop=0., drop_path=0.,
@@ -591,7 +591,7 @@ class EfficientFormer(torch.nn.Module):
 
         self.apply(self.cls_init_weights)
 
-        # self.init_cfg = copy.deepcopy(init_cfg)
+        self.init_cfg = copy.deepcopy(init_cfg)
         # load pre-trained model
         if self.fork_feat and (
                 self.init_cfg is not None or pretrained is not None):

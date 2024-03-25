@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/datasets/ade20k.py',
+    '../_base_/datasets/crack.py',
     '../_base_/default_runtime.py',
     '../_base_/schedules/schedule_160k.py'
 ]
@@ -14,21 +14,22 @@ data_preprocessor = dict(
     seg_pad_val=255,
     size=(512,512),
     test_cfg=dict(size_divisor=32))
+
 # model settings
 model = dict(
     type='EncoderDecoder',
     data_preprocessor = data_preprocessor,
     backbone=dict(
-        type='efficientformerv2_s2_feat',
+        type='efficientformerv2_s1_feat',
         style='pytorch',
         init_cfg=dict(
             type='Pretrained',
-            checkpoint='/home/nypyp/code/mmsegmentation/weights/eformer_s2_450.pth',
+            checkpoint='/home/nypyp/code/mmsegmentation/weights/eformer_s1_450.pth',
         ),
     ),
     neck=dict(
         type='FPN',
-        in_channels=[32, 64, 144, 288],
+        in_channels=[32, 48, 120, 224],
         out_channels=256,
         num_outs=4),
     decode_head=dict(
@@ -38,17 +39,18 @@ model = dict(
         feature_strides=[4, 8, 16, 32],
         channels=128,
         dropout_ratio=0.1,
-        num_classes=150,
+        num_classes=2,
+        out_channels=1,
         norm_cfg=norm_cfg,
         align_corners=False,
         loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+            type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0)),
     # model training and testing settings
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
 
 train_dataloader = dict(batch_size=8)
-train_cfg = dict(val_interval=16000)
+train_cfg = dict(val_interval=10000)
 test_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 # optimizer
@@ -56,7 +58,7 @@ val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 optim_wrapper = dict(
     _delete_=True,
     type='AmpOptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.0001, weight_decay=0.0001))
+    optimizer=dict(type='AdamW', lr=0.00005, weight_decay=0.0001))
 param_scheduler = [
     dict(
         type='PolyLR',
