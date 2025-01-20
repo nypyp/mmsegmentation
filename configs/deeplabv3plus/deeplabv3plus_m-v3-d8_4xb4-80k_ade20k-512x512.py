@@ -9,6 +9,8 @@ model = dict(
     data_preprocessor=data_preprocessor,
     decode_head=dict(num_classes=150),
     auxiliary_head=dict(num_classes=150))
+# dataset settings
+train_dataloader = dict(batch_size=2)
 
 
 
