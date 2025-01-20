@@ -136,7 +136,7 @@ class PoolFormerBlock(BaseModule):
         super().__init__()
 
         self.norm1 = build_norm_layer(norm_cfg, dim)[1]
-        if index < 3:
+        if index < 2:
             self.token_mixer = Pooling(pool_size=pool_size)
         else:
             self.token_mixer = BiLevelRoutingAttention(dim=dim,n_win=8)

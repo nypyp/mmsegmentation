@@ -54,7 +54,7 @@ model = dict(
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
 
-train_dataloader = dict(batch_size=2)
+train_dataloader = dict(batch_size=16)
 train_cfg = dict(val_interval=16000)
 test_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
 val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU','mDice','mFscore'])
@@ -89,9 +89,11 @@ optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001))
 param_scheduler = [
     dict(
+        type='LinearLR', start_factor=1e-6, by_epoch=False, begin=0, end=1500),
+    dict(
         type='PolyLR',
         power=0.9,
-        begin=0,
+        begin=1500,
         end=160000,
         eta_min=0.0,
         by_epoch=False,
