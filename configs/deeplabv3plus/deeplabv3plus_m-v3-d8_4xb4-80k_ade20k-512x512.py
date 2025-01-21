@@ -46,7 +46,7 @@ model = dict(
 )
 # dataset settings
 train_dataloader = dict(
-    batch_size=4,
+    batch_size=2,
     )
 
 
