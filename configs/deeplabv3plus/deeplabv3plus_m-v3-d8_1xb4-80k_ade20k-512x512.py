@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/deeplabv3plus_r50-d8.py', '../_base_/datasets/ade20k.py',
+    '../_base_/models/deeplabv3plus_r50-d8.py', '../_base_/datasets/ade20k_indoor.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_80k.py'
 ]
 norm_cfg = dict(type='SyncBN', requires_grad=True)
@@ -12,18 +12,18 @@ model = dict(
         _delete_=True,
         type='MobileNetV3',
         arch='large',
-        out_indices=(0, 12, 15),
+        out_indices=(0, 3, 16),
         norm_cfg=norm_cfg),
     decode_head=dict(
         _delete_=True,
         type='AIFIHead',
+        in_channels=960,
+        channels=480,
+        c1_in_channels=24,
+        c1_channels=48,
         in_index=2,
-        dim_in=160,
-        dim_out=80,
-        in_channels=160,
-        channels=80,
         dropout_ratio=0.1,
-        num_classes=150,
+        num_classes=58,
         norm_cfg=norm_cfg,
         align_corners=False,
         loss_decode=dict(
@@ -32,13 +32,13 @@ model = dict(
     auxiliary_head=dict(
         _delete_=True,
         type='FCNHead',
-        in_channels=160,
-        in_index=2,
+        in_channels=24,
+        in_index=1,
         channels=256,
         num_convs=1,
         concat_input=False,
         dropout_ratio=0.1,
-        num_classes=150,
+        num_classes=58,
         norm_cfg=norm_cfg,
         align_corners=False,
         loss_decode=dict(
@@ -48,6 +48,12 @@ model = dict(
 train_dataloader = dict(
     batch_size=4,
     )
+
+visualizer = dict(
+    vis_backends=[dict(type='LocalVisBackend'),
+                dict(type='TensorboardVisBackend'),
+                dict(type='WandbVisBackend')]
+)
 
 
 

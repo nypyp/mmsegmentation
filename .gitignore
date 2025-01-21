@@ -124,3 +124,7 @@ mmseg/.mim
 
 # Pytorch
 *.pth
+process_labels.py
+voc_annotation.py
+indoor_dataset.tar.gz
+mmseg/datasets/classes.md
