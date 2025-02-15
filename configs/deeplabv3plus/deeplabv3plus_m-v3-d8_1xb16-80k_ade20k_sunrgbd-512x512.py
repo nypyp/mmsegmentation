@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/deeplabv3plus_r50-d8.py', '../_base_/datasets/ade20k_indoor.py',
+    '../_base_/models/deeplabv3plus_r50-d8.py', '../_base_/datasets/ade20k_sunrgbd.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_80k.py'
 ]
 norm_cfg = dict(type='SyncBN', requires_grad=True)
@@ -46,7 +46,7 @@ model = dict(
 )
 # dataset settings
 train_dataloader = dict(
-    batch_size=2,
+    batch_size=16,
     )
 
 visualizer = dict(
@@ -54,6 +54,11 @@ visualizer = dict(
                 dict(type='TensorboardVisBackend'),
                 dict(type='WandbVisBackend')]
 )
+
+default_hooks = dict(
+    visualization=dict(type='SegVisualizationHook',draw=True,interval=50)
+)
+
 
 
 
