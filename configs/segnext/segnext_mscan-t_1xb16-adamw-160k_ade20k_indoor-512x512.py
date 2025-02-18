@@ -55,7 +55,7 @@ model = dict(
     test_cfg=dict(mode='whole'))
 
 # dataset settings
-train_dataloader = dict(batch_size=16)
+train_dataloader = dict(batch_size=8)
 
 # optimizer
 optim_wrapper = dict(
@@ -69,6 +69,12 @@ optim_wrapper = dict(
             'norm': dict(decay_mult=0.),
             'head': dict(lr_mult=10.)
         }))
+
+visualizer = dict(
+    vis_backends=[dict(type='LocalVisBackend'),
+                dict(type='TensorboardVisBackend'),
+                dict(type='WandbVisBackend')]
+)
 
 param_scheduler = [
     dict(
