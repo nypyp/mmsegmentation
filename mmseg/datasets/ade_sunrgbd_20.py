@@ -4,7 +4,7 @@ from .basesegdataset import BaseSegDataset
 
 
 @DATASETS.register_module()
-class ADE20K_sunrgbd_Dataset(BaseSegDataset):
+class ADE20K_sunrgbd_20_Dataset(BaseSegDataset):
     """sunrgbd dataset.
 
     In segmentation map annotation for ADE20K, 0 stands for background, which
@@ -14,24 +14,17 @@ class ADE20K_sunrgbd_Dataset(BaseSegDataset):
     """
     METAINFO = dict(
         classes=(
-            'wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table', 
-            'door', 'window', 'bookshelf', 'picture', 'counter', 'blinds',
-            'desk', 'shelves', 'curtain', 'dresser', 'pillow', 'mirror',
-            'floor_mat', 'clothes', 'ceiling', 'books', 'fridge', 'tv',
-            'paper', 'towel', 'shower_curtain', 'box', 'whiteboard',
-            'person', 'night_stand', 'toilet', 'sink', 'lamp', 'bathtub',
-            'bag'
+            'wall', 'floor', 'bed', 'chair',
+            'table', 'door', 'window', 'bookshelf',
+            'picture', 'curtain', 'floor_mat', 'ceiling',
+            'fridge', 'tv', 'box', 'person',
+            'toilet', 'sink', 'lamp', 'bathtub'
         ),
         palette=[[218, 59, 123], [75, 7, 46], [0, 200, 0], [67, 0, 143],
                  [191, 0, 126], [198, 120, 12], [121, 193, 0], [0, 55, 122],
                  [201, 60, 128], [195, 187, 136], [132, 0, 193], [72, 3, 48],
                  [70, 0, 195], [199, 127, 190], [190, 194, 58], [62, 66, 174],
                  [187, 191, 192], [30, 2, 1],  [175, 0, 0], [101, 0, 141],
-                 [87, 126, 125], [218, 124, 124], [24, 61, 0], [255, 188, 0],
-                 [84, 68, 131], [131, 128, 1], [240, 191, 132], [142, 5, 61],
-                 [19, 133, 57], [120, 0, 0], [120, 120, 120], [180, 120, 120],
-                 [6, 230, 230], [80, 50, 50], [4, 200, 3], [120, 120, 80],
-                 [140, 140, 140]
         ]
     )
 

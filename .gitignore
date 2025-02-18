@@ -128,3 +128,6 @@ process_labels.py
 voc_annotation.py
 indoor_dataset.tar.gz
 mmseg/datasets/classes.md
+remap_labels.py
+label_mapping_example.json
+sunrgbd_19.tar.gz

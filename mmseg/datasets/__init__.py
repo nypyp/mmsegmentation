@@ -28,6 +28,7 @@ from .synapse import SynapseDataset
 from .crack import Crack
 from .ade_indoor import ADE20K_InDoor_Dataset
 from .ade_sunrgbd import ADE20K_sunrgbd_Dataset
+from .ade_sunrgbd_20 import ADE20K_sunrgbd_20_Dataset
 # yapf: disable
 from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          BioMedical3DRandomCrop, BioMedical3DRandomFlip,
@@ -63,5 +64,5 @@ __all__ = [
     'MapillaryDataset_v2', 'Albu', 'LEVIRCDDataset',
     'LoadMultipleRSImageFromFile', 'LoadSingleRSImageFromFile',
     'ConcatCDInput', 'BaseCDDataset', 'DSDLSegDataset', 'BDD100KDataset',
-    'NYUDataset','Crack', 'ADE20K_InDoor_Dataset', 'ADE20K_sunrgbd_Dataset'
+    'NYUDataset','Crack', 'ADE20K_InDoor_Dataset', 'ADE20K_sunrgbd_Dataset', 'ADE20K_sunrgbd_20_Dataset'
 ]
