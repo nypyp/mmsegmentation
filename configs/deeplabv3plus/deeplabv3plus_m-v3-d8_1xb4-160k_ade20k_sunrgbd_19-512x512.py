@@ -12,7 +12,7 @@ model = dict(
         _delete_=True,
         type='MobileNetV3',
         arch='large',
-        out_indices=(3, 7, 16),
+        out_indices=(3, 15, 16),
         norm_cfg=norm_cfg),
     # decode_head=dict(
     #     type='DepthwiseSeparableASPPHead',
@@ -32,7 +32,7 @@ model = dict(
         _delete_=True,
         type='AIFIHead',
         in_channels=960,
-        channels=480,
+        channels=256,
         c1_in_channels=24,
         c1_channels=48,
         transformer_channels=2048,
@@ -47,8 +47,8 @@ model = dict(
     auxiliary_head=dict(
         _delete_=True,
         type='FCNHead',
-        in_channels=24,
-        in_index=0,
+        in_channels=160,
+        in_index=1,
         channels=256,
         num_convs=1,
         concat_input=False,
@@ -58,6 +58,7 @@ model = dict(
         align_corners=False,
         loss_decode=dict(
             type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+    # auxiliary_head=None,
 )
 # dataset settings
 train_dataloader = dict(

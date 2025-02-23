@@ -219,7 +219,7 @@ class MobileNetV3(BaseModule):
                     pad *= (modified_module.kernel_size[0] - 1) // 2
                     modified_module.padding = (pad, pad)
         else:
-            self.layer7.depthwise_conv.conv.stride = (2, 2)
+            self.layer7.depthwise_conv.conv.stride = (1, 1)
             self.layer13.depthwise_conv.conv.stride = (1, 1)
             for i in range(7, len(layers)):
                 layer = getattr(self, layers[i])

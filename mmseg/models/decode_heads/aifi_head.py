@@ -5,174 +5,105 @@ Reference:
     [paper name/link]
 """
 
-from typing import List, Optional, Union
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+"""Transformer modules."""
+
+import math
+
+from typing import List
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import ConvModule
-from mmengine.model import BaseModule
 from torch import Tensor
 
-from mmseg.registry import MODELS
-from ..utils import resize
+from mmcv.cnn import ConvModule
 from .decode_head import BaseDecodeHead
+from mmseg.registry import MODELS
 
 
-class SpatialAttention(BaseModule):
-    """Spatial attention module."""
+class TransformerEncoderLayer(nn.Module):
+    """Defines a single layer of the transformer encoder."""
 
-    def __init__(self, channels: int, reduction: int = 16) -> None:
+    def __init__(self, c1, cm=2048, num_heads=8, dropout=0.0, act=nn.GELU(), normalize_before=False):
+        """Initialize the TransformerEncoderLayer with specified parameters."""
         super().__init__()
-        self.channels = channels
-        self.bn = nn.BatchNorm2d(channels, affine=True)
+        self.ma = nn.MultiheadAttention(c1, num_heads, dropout=dropout, batch_first=True)
+        # Implementation of Feedforward model
+        self.fc1 = nn.Linear(c1, cm)
+        self.fc2 = nn.Linear(cm, c1)
 
-    def forward(self, x: Tensor) -> Tensor:
-        identity = x
-        x = x.permute(0, 2, 3, 1).reshape(x.size(0), -1, 1, self.channels)
-        x = self.bn(x)
-        
-        weights = self.bn.weight.data.abs() / torch.sum(self.bn.weight.data.abs())
-        x = x.permute(0, 3, 2, 1)
-        x = torch.mul(weights, x)
-        x = x.reshape(identity.shape)
-        
-        return torch.sigmoid(x) * identity
-
-
-class ChannelAttention(BaseModule):
-    """Channel attention module."""
-
-    def __init__(self, channels: int, reduction: int = 16) -> None:
-        super().__init__()
-        self.channels = channels
-        self.bn = nn.BatchNorm2d(channels, affine=True)
-
-    def forward(self, x: Tensor) -> Tensor:
-        identity = x
-        x = self.bn(x)
-        
-        weights = self.bn.weight.data.abs() / torch.sum(self.bn.weight.data.abs())
-        x = x.permute(0, 2, 3, 1)
-        x = torch.mul(weights, x)
-        x = x.permute(0, 3, 1, 2)
-        
-        return torch.sigmoid(x) * identity
-
-
-class NAMAttention(BaseModule):
-    """Non-local Adaptive Module Attention."""
-    
-    def __init__(self,
-                 channels: int,
-                 out_channels: Optional[int] = None,
-                 use_spatial: bool = True) -> None:
-        super().__init__()
-        self.channel_attention = ChannelAttention(channels)
-        self.use_spatial = use_spatial
-        if use_spatial:
-            self.spatial_attention = SpatialAttention(channels)
-
-    def forward(self, x: Tensor) -> Tensor:
-        out = self.channel_attention(x)
-        if self.use_spatial:
-            out = self.spatial_attention(out)
-        return out
-
-
-class TransformerEncoderLayer(BaseModule):
-    """Transformer encoder layer."""
-
-    def __init__(self,
-                 embed_dims: int,
-                 num_heads: int,
-                 feedforward_channels: int,
-                 dropout: float = 0.0,
-                 norm_cfg: dict = dict(type='LN'),
-                 init_cfg: Optional[dict] = None) -> None:
-        super().__init__(init_cfg)
-        
-        self.embed_dims = embed_dims
-        self.self_attn = nn.MultiheadAttention(
-            embed_dims, num_heads, dropout=dropout, batch_first=True)
-            
-        self.norm1 = nn.LayerNorm(embed_dims)
-        self.norm2 = nn.LayerNorm(embed_dims)
+        self.norm1 = nn.LayerNorm(c1)
+        self.norm2 = nn.LayerNorm(c1)
+        self.dropout = nn.Dropout(dropout)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
 
-        self.linear1 = nn.Linear(embed_dims, feedforward_channels)
-        self.linear2 = nn.Linear(feedforward_channels, embed_dims)
-        self.activation = nn.GELU()
+        self.act = act
+        self.normalize_before = normalize_before
 
-    def forward(self, x: Tensor, pos: Optional[Tensor] = None) -> Tensor:
-        # Self attention
-        x_with_pos = x if pos is None else x + pos
-        attn_out = self.self_attn(
-            x_with_pos, x_with_pos, value=x)[0]
-        x = x + self.dropout1(attn_out)
-        x = self.norm1(x)
+    def with_pos_embed(self, tensor, pos=None):
+        """Add position embeddings to the tensor if provided."""
+        return tensor if pos is None else tensor + pos
 
-        # FFN
-        ffn_out = self.linear2(self.dropout2(self.activation(self.linear1(x))))
-        x = x + self.dropout2(ffn_out)
-        x = self.norm2(x)
+    def forward_post(self, src, src_mask=None, src_key_padding_mask=None, pos=None):
+        """Performs forward pass with post-normalization."""
+        q = k = self.with_pos_embed(src, pos)
+        src2 = self.ma(q, k, value=src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
+        src = src + self.dropout1(src2)
+        src = self.norm1(src)
+        src2 = self.fc2(self.dropout(self.act(self.fc1(src))))
+        src = src + self.dropout2(src2)
+        return self.norm2(src)
 
-        return x
+    def forward_pre(self, src, src_mask=None, src_key_padding_mask=None, pos=None):
+        """Performs forward pass with pre-normalization."""
+        src2 = self.norm1(src)
+        q = k = self.with_pos_embed(src2, pos)
+        src2 = self.ma(q, k, value=src2, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
+        src = src + self.dropout1(src2)
+        src2 = self.norm2(src)
+        src2 = self.fc2(self.dropout(self.act(self.fc1(src2))))
+        return src + self.dropout2(src2)
+
+    def forward(self, src, src_mask=None, src_key_padding_mask=None, pos=None):
+        """Forward propagates the input through the encoder module."""
+        if self.normalize_before:
+            return self.forward_pre(src, src_mask, src_key_padding_mask, pos)
+        return self.forward_post(src, src_mask, src_key_padding_mask, pos)
 
 
-class AIFI(BaseModule):
-    """AIFI transformer module."""
+class AIFI(TransformerEncoderLayer):
+    """Defines the AIFI transformer layer."""
 
-    def __init__(self,
-                 embed_dims: int,
-                 num_heads: int = 8,
-                 feedforward_channels: int = 2048,
-                 dropout: float = 0.0,
-                 init_cfg: Optional[dict] = None) -> None:
-        super().__init__(init_cfg)
-        self.encoder = TransformerEncoderLayer(
-            embed_dims=embed_dims,
-            num_heads=num_heads,
-            feedforward_channels=feedforward_channels,
-            dropout=dropout)
+    def __init__(self, c1, cm=2048, num_heads=8, dropout=0, act=nn.GELU(), normalize_before=False):
+        """Initialize the AIFI instance with specified parameters."""
+        super().__init__(c1, cm, num_heads, dropout, act, normalize_before)
 
-    def forward(self, x: Tensor) -> Tensor:
-        b, c, h, w = x.shape
-        pos_embed = self._build_position_embedding(w, h, c)
-        
-        # (B, C, H, W) -> (B, H*W, C)
-        x = x.flatten(2).permute(0, 2, 1)
-        
-        x = self.encoder(x, pos=pos_embed.to(x.device, x.dtype))
-        
-        # (B, H*W, C) -> (B, C, H, W)
-        return x.permute(0, 2, 1).reshape(b, c, h, w)
+    def forward(self, x):
+        """Forward pass for the AIFI transformer layer."""
+        c, h, w = x.shape[1:]
+        pos_embed = self.build_2d_sincos_position_embedding(w, h, c)
+        # flatten [B, C, H, W] to [B, HxW, C]
+        x = super().forward(x.flatten(2).permute(0, 2, 1), pos=pos_embed.to(device=x.device, dtype=x.dtype))
+        return x.permute(0, 2, 1).view([-1, c, h, w]).contiguous()
 
     @staticmethod
-    def _build_position_embedding(w: int,
-                                h: int,
-                                embed_dims: int,
-                                temperature: float = 10000.) -> Tensor:
-        """Build 2D sinusoidal position embedding."""
-        grid_w = torch.arange(w, dtype=torch.float32)
-        grid_h = torch.arange(h, dtype=torch.float32)
+    def build_2d_sincos_position_embedding(w, h, embed_dim=256, temperature=10000.0):
+        """Builds 2D sine-cosine position embedding."""
+        grid_w = torch.arange(int(w), dtype=torch.float32)
+        grid_h = torch.arange(int(h), dtype=torch.float32)
         grid_w, grid_h = torch.meshgrid(grid_w, grid_h, indexing='ij')
-        
-        assert embed_dims % 4 == 0, \
-            'Embed dimension must be divisible by 4 for 2D position embedding'
-            
-        pos_dim = embed_dims // 4
+        assert embed_dim % 4 == 0, \
+            'Embed dimension must be divisible by 4 for 2D sin-cos position embedding'
+        pos_dim = embed_dim // 4
         omega = torch.arange(pos_dim, dtype=torch.float32) / pos_dim
         omega = 1. / (temperature ** omega)
 
         out_w = grid_w.flatten()[..., None] @ omega[None]
         out_h = grid_h.flatten()[..., None] @ omega[None]
 
-        return torch.cat([
-            torch.sin(out_w), torch.cos(out_w),
-            torch.sin(out_h), torch.cos(out_h)
-        ], 1)[None]
+        return torch.cat([torch.sin(out_w), torch.cos(out_w), torch.sin(out_h), torch.cos(out_h)], 1)[None]
 
 
 @MODELS.register_module()
@@ -208,10 +139,9 @@ class AIFIHead(BaseDecodeHead):
             
         # AIFI transformer
         self.aifi = AIFI(
-            embed_dims=self.in_channels,
-            feedforward_channels=transformer_channels,
-            num_heads=num_heads,
-            dropout=dropout)
+            c1=self.in_channels,
+            cm=transformer_channels,
+            num_heads=num_heads)
 
         # Global pooling branch  
         self.global_conv = ConvModule(
@@ -246,7 +176,6 @@ class AIFIHead(BaseDecodeHead):
                 padding=1,
                 norm_cfg=self.norm_cfg,
                 act_cfg=self.act_cfg),
-            nn.Dropout(dropout),
             ConvModule(
                 self.channels,
                 self.channels,
@@ -254,11 +183,14 @@ class AIFIHead(BaseDecodeHead):
                 padding=1,
                 norm_cfg=self.norm_cfg,
                 act_cfg=self.act_cfg),
-            nn.Dropout(0.1))
+        )
 
     def _forward_feature(self, inputs: List[Tensor]) -> Tensor:
         """Forward function for feature computation."""
         x = self._transform_inputs(inputs)
+        
+        # Get input shape
+        row, col = x.shape[2:]
         
         # Main branch
         feat_main = self.lateral_conv(x)
@@ -266,9 +198,10 @@ class AIFIHead(BaseDecodeHead):
         # AIFI branch
         feat_aifi = self.aifi(x)
         
-        # Global context
-        feat_global = self.global_conv(
-            F.adaptive_avg_pool2d(x, 1).expand_as(x))
+        # Global context branch
+        feat_pool = F.adaptive_avg_pool2d(x, 1)  # 形状 [B, C, 1, 1]
+        feat_conv = self.global_conv(feat_pool)  # 卷积操作在1x1特征图上进行
+        feat_global = F.interpolate(feat_conv, (row, col), mode='bilinear', align_corners=True)  # 显式上采样
 
         # Feature fusion
         feat_fused = self.fusion_conv(
@@ -284,15 +217,17 @@ class AIFIHead(BaseDecodeHead):
         low_level_feat = self.c1_transform(inputs[0])
         
         # Resize and concatenate features
-        output = resize(
+        output = F.interpolate(
             output,
             size=low_level_feat.shape[2:],
             mode='bilinear',
-            align_corners=self.align_corners)
+            align_corners=True
+        )
         output = self.final_conv(
             torch.cat([low_level_feat, output], dim=1))
             
         # Final prediction
         output = self.cls_seg(output)
+        
         
         return output
