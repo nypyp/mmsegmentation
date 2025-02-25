@@ -83,10 +83,18 @@ class AIFI(TransformerEncoderLayer):
     def forward(self, x):
         """Forward pass for the AIFI transformer layer."""
         c, h, w = x.shape[1:]
-        pos_embed = self.build_2d_sincos_position_embedding(w, h, c)
-        # flatten [B, C, H, W] to [B, HxW, C]
-        x = super().forward(x.flatten(2).permute(0, 2, 1), pos=pos_embed.to(device=x.device, dtype=x.dtype))
-        return x.permute(0, 2, 1).view([-1, c, h, w]).contiguous()
+        
+        # 只在attention计算前下采样
+        x_small = F.interpolate(x, scale_factor=0.5, mode='bilinear', align_corners=False)
+        # 计算attention
+        pos_embed = self.build_2d_sincos_position_embedding(w//2, h//2, c)
+        x_attn = super().forward(x_small.flatten(2).permute(0, 2, 1), 
+                              pos=pos_embed.to(device=x.device, dtype=x.dtype))
+        # 恢复原始分辨率
+        x_attn = x_attn.permute(0, 2, 1).view([-1, c, h//2, w//2])
+        x_out = F.interpolate(x_attn, size=(h, w), mode='bilinear', align_corners=False)
+        
+        return x_out
 
     @staticmethod
     def build_2d_sincos_position_embedding(w, h, embed_dim=256, temperature=10000.0):
