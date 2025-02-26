@@ -114,6 +114,51 @@ class AIFI(TransformerEncoderLayer):
         return torch.cat([torch.sin(out_w), torch.cos(out_w), torch.sin(out_h), torch.cos(out_h)], 1)[None]
 
 
+class Spatial_Att(nn.Module):
+    def __init__(self, feat_dim):
+        super().__init__()
+        self.bn2 = nn.BatchNorm2d(feat_dim, affine=True)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        residual = x
+        x = x.permute(0, 2, 3, 1).reshape(b, h*w, 1, c).contiguous()
+        x = self.bn2(x)
+        weight_bn = self.bn2.weight.data.abs() / torch.sum(self.bn2.weight.data.abs())
+        x = x.permute(0, 3, 2, 1).contiguous()
+        x = torch.mul(weight_bn, x)
+        x = x.reshape(b, c, h, w).contiguous()
+        return torch.sigmoid(x) * residual
+
+class Channel_Att(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.bn2 = nn.BatchNorm2d(channels, affine=True)
+
+    def forward(self, x):
+        residual = x
+        x = self.bn2(x)
+        weight_bn = self.bn2.weight.data.abs() / torch.sum(self.bn2.weight.data.abs())
+        x = x.permute(0, 2, 3, 1).contiguous()
+        x = torch.mul(weight_bn, x)
+        x = x.permute(0, 3, 1, 2).contiguous()
+        return torch.sigmoid(x) * residual
+
+class NAMAttention(nn.Module):
+    def __init__(self, channels, no_spatial: bool = False):
+        super().__init__()
+        self.channel_att = Channel_Att(channels)
+        self.spatial_att = None
+        self.no_spatial = no_spatial
+
+    def forward(self, x):
+        x = self.channel_att(x)
+        if self.no_spatial is False:
+            _, _, h, w = x.shape
+            self.spatial_att = Spatial_Att(h * w).to(x.device)
+            x = self.spatial_att(x)
+        return x
+
 @MODELS.register_module()
 class AIFIHead(BaseDecodeHead):
     """AIFI Decoder Head.
@@ -136,6 +181,9 @@ class AIFIHead(BaseDecodeHead):
                  dropout: float = 0.1,
                  **kwargs) -> None:
         super().__init__(**kwargs)
+
+        # 初始化NAM注意力模块（通道数匹配concat后的维度）
+        self.nam_attention = NAMAttention(channels=self.channels * 2 + self.in_channels)
 
         # Main branch
         self.lateral_conv = ConvModule(
@@ -212,8 +260,9 @@ class AIFIHead(BaseDecodeHead):
         feat_global = F.interpolate(feat_conv, (row, col), mode='bilinear', align_corners=True)  # 显式上采样
 
         # Feature fusion
-        feat_fused = self.fusion_conv(
-            torch.cat([feat_main, feat_aifi, feat_global], dim=1))
+        cat_feat = torch.cat([feat_main, feat_aifi, feat_global], dim=1)
+        cat_feat = self.nam_attention(cat_feat)
+        feat_fused = self.fusion_conv(cat_feat)
 
         return feat_fused
 
