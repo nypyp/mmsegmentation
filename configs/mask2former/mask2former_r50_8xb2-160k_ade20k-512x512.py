@@ -149,7 +149,7 @@ train_pipeline = [
     dict(type='PhotoMetricDistortion'),
     dict(type='PackSegInputs')
 ]
-train_dataloader = dict(batch_size=2, dataset=dict(pipeline=train_pipeline))
+train_dataloader = dict(batch_size=4, dataset=dict(pipeline=train_pipeline))
 
 # optimizer
 embed_multi = dict(lr_mult=1.0, decay_mult=0.0)
@@ -174,7 +174,7 @@ param_scheduler = [
         eta_min=0,
         power=0.9,
         begin=0,
-        end=160000,
+        end=640000,
         by_epoch=False)
 ]
 
@@ -197,4 +197,4 @@ default_hooks = dict(
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
-auto_scale_lr = dict(enable=False, base_batch_size=16)
+auto_scale_lr = dict(enable=False, base_batch_size=4)
