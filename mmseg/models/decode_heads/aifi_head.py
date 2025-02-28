@@ -20,6 +20,7 @@ from torch import Tensor
 from mmcv.cnn import ConvModule
 from .decode_head import BaseDecodeHead
 from mmseg.registry import MODELS
+from mmseg.models.utils.c2f import C2f, ScConv
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -179,6 +180,7 @@ class AIFIHead(BaseDecodeHead):
                  transformer_channels: int = 2048,
                  num_heads: int = 8,
                  dropout: float = 0.1,
+                 use_c2f: bool = True,
                  **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -224,22 +226,36 @@ class AIFIHead(BaseDecodeHead):
             act_cfg=self.act_cfg)
 
         # Final fusion
-        self.final_conv = nn.Sequential(
-            ConvModule(
-                c1_channels + self.channels,
-                self.channels,
-                kernel_size=3,
-                padding=1,
-                norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg),
-            ConvModule(
-                self.channels,
-                self.channels,
-                kernel_size=3,
-                padding=1,
-                norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg),
-        )
+        if use_c2f:
+            self.final_conv = nn.Sequential(
+                C2f(c1_channels + self.channels, self.channels, shortcut=True),
+                nn.SiLU(inplace=True),
+                nn.Dropout(0.5),
+
+                #nn.Conv2d(256, 256, 3, stride=1, padding=1),
+                ScConv(self.channels),
+                nn.BatchNorm2d(self.channels),
+                nn.ReLU(inplace=True),
+
+                nn.Dropout(0.1),
+            )
+        else:
+            self.final_conv = nn.Sequential(
+                ConvModule(
+                    c1_channels + self.channels,
+                    self.channels,
+                    kernel_size=3,
+                    padding=1,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg),
+                ConvModule(
+                    self.channels,
+                    self.channels,
+                    kernel_size=3,
+                    padding=1,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg),
+            )
 
     def _forward_feature(self, inputs: List[Tensor]) -> Tensor:
         """Forward function for feature computation."""
