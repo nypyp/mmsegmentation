@@ -271,7 +271,7 @@ class AIFIHead(BaseDecodeHead):
         output = self._forward_feature(inputs)
         
         # Transform and fuse low-level features
-        low_level_feat = self.c1_transform(inputs[0])
+        low_level_feat = self.c1_transform(inputs[1])
         
         # Resize and concatenate features
         output = F.interpolate(
