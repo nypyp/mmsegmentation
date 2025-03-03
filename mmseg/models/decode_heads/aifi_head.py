@@ -20,7 +20,7 @@ from torch import Tensor
 from mmcv.cnn import ConvModule
 from .decode_head import BaseDecodeHead
 from mmseg.registry import MODELS
-from mmseg.models.utils.c2f import C2f, ScConv
+from mmseg.models.utils.c2f import C2f, ScConv, ACmix
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -186,6 +186,7 @@ class AIFIHead(BaseDecodeHead):
 
         # 初始化NAM注意力模块（通道数匹配concat后的维度）
         self.nam_attention = NAMAttention(channels=self.channels * 2 + self.in_channels)
+        self.acmix_attention = ACmix(c1_in_channels, c1_in_channels)
 
         # Main branch
         self.lateral_conv = ConvModule(
@@ -287,7 +288,8 @@ class AIFIHead(BaseDecodeHead):
         output = self._forward_feature(inputs)
         
         # Transform and fuse low-level features
-        low_level_feat = self.c1_transform(inputs[1])
+        low_level_feat = self.acmix_attention(inputs[1])
+        low_level_feat = self.c1_transform(low_level_feat)
         
         # Resize and concatenate features
         output = F.interpolate(
