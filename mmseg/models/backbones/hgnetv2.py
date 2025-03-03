@@ -281,8 +281,8 @@ class HGNetV2(BaseModule):
                 # in_channels, mid_channels, out_channels, num_blocks, downsample, light_block, kernel_size, layer_num
                 "stage1": [48, 48, 128, 1, False, False, 3, 6],
                 "stage2": [128, 96, 512, 1, True, False, 3, 6],
-                "stage3": [512, 192, 1024, 3, True, True, 5, 6],
-                "stage4": [1024, 384, 2048, 1, True, True, 5, 6],
+                "stage3": [512, 192, 1024, 3, False, True, 5, 6],
+                "stage4": [1024, 384, 2048, 1, False, True, 5, 6],
             }
         },
         'X': {
@@ -311,6 +311,7 @@ class HGNetV2(BaseModule):
                  arch,
                  use_lab=False,
                  return_idx=[1, 2, 3],
+                 norm_cfg=dict(type='BN', requires_grad=True),
                  **kwargs):
         super().__init__(**kwargs)
         self.use_lab = use_lab
