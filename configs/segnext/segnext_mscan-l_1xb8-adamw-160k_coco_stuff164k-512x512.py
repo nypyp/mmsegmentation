@@ -16,6 +16,7 @@ data_preprocessor = dict(
     test_cfg=dict(size_divisor=32))
 model = dict(
     type='EncoderDecoder',
+    data_preprocessor=data_preprocessor,
     backbone=dict(
         type='MSCAN',
         embed_dims=[64, 128, 320, 512],

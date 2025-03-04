@@ -19,7 +19,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='ResizeShortestEdge', scale=crop_size, max_size=2560),
+    dict(type='Resize', scale=(640, 640), keep_ratio=False),
     dict(type='LoadAnnotations'),
     dict(type='PackSegInputs')
 ]
