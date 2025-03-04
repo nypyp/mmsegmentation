@@ -16,13 +16,16 @@ data_preprocessor = dict(
     test_cfg=dict(size_divisor=32))
 model = dict(
     type='EncoderDecoder',
+    data_preprocessor=data_preprocessor,
+    pretrained=None,
     backbone=dict(
         type='MSCAN',
-        embed_dims=[64, 128, 320, 512],
-        depths=[3, 5, 27, 3],
         init_cfg=dict(type='Pretrained', checkpoint=checkpoint_file),
+        embed_dims=[64, 128, 320, 512],
+        mlp_ratios=[8, 8, 4, 4],
         drop_rate=0.0,
         drop_path_rate=0.3,
+        depths=[3, 5, 27, 3],
         attention_kernel_sizes=[5, [1, 7], [1, 11], [1, 21]],
         attention_kernel_paddings=[2, [0, 3], [0, 5], [0, 10]],
         act_cfg=dict(type='GELU'),
@@ -77,3 +80,9 @@ param_scheduler = [
         by_epoch=False,
     )
 ]
+
+visualizer = dict(
+    vis_backends=[dict(type='LocalVisBackend'),
+                dict(type='TensorboardVisBackend'),
+                dict(type='WandbVisBackend')]
+)
