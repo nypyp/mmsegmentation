@@ -132,3 +132,6 @@ remap_labels.py
 label_mapping_example.json
 sunrgbd_19.tar.gz
 VOCdevkit.tar.gz
+extract_categories.py
+labels.json
+configs/segnext/labels.txt

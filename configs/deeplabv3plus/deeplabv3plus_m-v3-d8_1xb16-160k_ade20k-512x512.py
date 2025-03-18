@@ -21,10 +21,14 @@ model = dict(
         channels=480,
         c1_in_channels=24,
         c1_channels=48,
+        transformer_channels=1024,
         in_index=2,
+        use_c2f=True,
+        use_nam=True,
+        use_acmix=False,
         dropout_ratio=0.1,
-        num_classes=58,
-        norm_cfg=norm_cfg,
+        num_classes=150,
+        norm_cfg=dict(type='BN', requires_grad=True),
         align_corners=False,
         loss_decode=dict(
             type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)

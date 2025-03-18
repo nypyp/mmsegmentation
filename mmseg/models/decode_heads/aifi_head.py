@@ -20,7 +20,7 @@ from torch import Tensor
 from mmcv.cnn import ConvModule
 from .decode_head import BaseDecodeHead
 from mmseg.registry import MODELS
-from mmseg.models.utils.c2f import C2f, ScConv, ACmix
+from mmseg.models.utils.c2f import C2f, ScConv, ACmix, GAMAttention
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -180,12 +180,17 @@ class AIFIHead(BaseDecodeHead):
                  transformer_channels: int = 2048,
                  num_heads: int = 8,
                  dropout: float = 0.1,
-                 use_c2f: bool = True,
+                 use_nam: bool = False,
+                 use_acmix: bool = False,
+                 use_c2f: bool = False,
                  **kwargs) -> None:
         super().__init__(**kwargs)
 
         # 初始化NAM注意力模块（通道数匹配concat后的维度）
+        self.use_nam = use_nam
         self.nam_attention = NAMAttention(channels=self.channels * 2 + self.in_channels)
+        # self.nam_attention = GAMAttention(c1=self.channels * 2 + self.in_channels, c2=self.channels * 2 + self.in_channels)
+        self.use_acmix = use_acmix
         self.acmix_attention = ACmix(c1_in_channels, c1_in_channels)
 
         # Main branch
@@ -278,7 +283,8 @@ class AIFIHead(BaseDecodeHead):
 
         # Feature fusion
         cat_feat = torch.cat([feat_main, feat_aifi, feat_global], dim=1)
-        cat_feat = self.nam_attention(cat_feat)
+        if self.use_nam:
+            cat_feat = self.nam_attention(cat_feat)
         feat_fused = self.fusion_conv(cat_feat)
 
         return feat_fused
@@ -288,8 +294,11 @@ class AIFIHead(BaseDecodeHead):
         output = self._forward_feature(inputs)
         
         # Transform and fuse low-level features
-        low_level_feat = self.acmix_attention(inputs[1])
-        low_level_feat = self.c1_transform(low_level_feat)
+        if self.use_acmix:
+            low_level_feat = self.acmix_attention(inputs[1])
+            low_level_feat = self.c1_transform(low_level_feat)
+        else:
+            low_level_feat = self.c1_transform(inputs[1])
         
         # Resize and concatenate features
         output = F.interpolate(
